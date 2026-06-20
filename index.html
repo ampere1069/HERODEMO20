@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MRT PROJECT | HERO NV08</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+TC:wght@300;400;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ── RWD rem 格線 ── */
+html { font-size: 16px; }
+@media (max-width: 1920px) { html { font-size: 0.833333vw; } }
+@media (max-width: 1440px) { html { font-size: 1.111111vw; } }
+@media (max-width: 1024px) { html { font-size: 1.5625vw; } }
+@media (max-width: 640px)  { html { font-size: 4.444444vw; } }
+
+:root {
+  --void:  #040810;
+  --navy:  #0A1428;
+  --g:     #00C4A7;
+  --r:     #E8453C;
+  --o:     #F5A623;
+  --b:     #4A9FE0;
+  --br:    #C49A6C;
+  --hi:    #C8DCF0;
+  --mid:   rgba(180,215,245,.46);
+  --lo:    rgba(150,190,225,.22);
+  --fn-d:  'Bebas Neue', sans-serif;
+  --fn-zh: 'Noto Sans TC', sans-serif;
+  --fn-m:  'Space Mono', monospace;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; background:var(--void); overflow:hidden; cursor:none; }
+
+.stage  { position:relative; width:100%; height:100dvh; overflow:hidden; }
+.camera { position:absolute; inset:-5%; width:110%; height:110%; will-change:transform; }
+
+video.media {
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:center;
+}
+.overlay {
+  position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(
+    140deg,
+    rgba(4,8,16,.82) 0%,
+    rgba(10,20,40,.26) 46%,
+    rgba(4,8,16,.65) 100%
+  );
+}
+
+/* Stars */
+.stars { position:absolute; inset:0; pointer-events:none; z-index:2; width:1px; height:1px; }
+
+/* KPI canvas wrap */
+.kpi-wrap {
+  position:absolute;
+  right:4vw; top:50%; transform:translateY(-50%);
+  z-index:4; pointer-events:none; opacity:0;
+  filter:
+    drop-shadow(0 0 24px rgba(0,196,167,.18))
+    drop-shadow(0 0 80px rgba(0,196,167,.07));
+}
+#kpi-canvas { display:block; }
+
+/* Scan line */
+.scanline {
+  position:absolute; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, transparent 0%, rgba(0,196,167,.15) 40%, rgba(0,196,167,.15) 60%, transparent 100%);
+  z-index:5; pointer-events:none;
+  animation:scan 10s linear infinite; opacity:.55;
+}
+@keyframes scan { 0% { top:-2px; } 100% { top:100%; } }
+
+/* Grain */
+.grain {
+  position:fixed; inset:-3%; width:106%; height:106%;
+  pointer-events:none; z-index:99; opacity:.016;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain .45s steps(2) infinite;
+}
+@keyframes grain {
+  0%,100% { transform:translate3d(0,0,0); }
+  33%      { transform:translate3d(-2%,1%,0); }
+  66%      { transform:translate3d(1%,-1.5%,0); }
+}
+
+/* ── Nav ── */
+nav.topbar {
+  position:absolute; top:0; left:0; right:0;
+  z-index:10; padding:2.0rem 3.6rem;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.brand {
+  font-family:var(--fn-m); font-size:.60rem; font-weight:400;
+  letter-spacing:.20em; text-transform:uppercase; color:var(--mid);
+}
+.nav-r { display:flex; align-items:center; gap:1.8rem; }
+
+/* KPI legend pills */
+.kpi-legend { display:flex; gap:.4rem; align-items:center; }
+.kpi-pip { width:8px; height:8px; border-radius:50%; opacity:.85; }
+
+.live-tag {
+  display:flex; align-items:center; gap:.45rem;
+  font-family:var(--fn-m); font-size:.56rem; font-weight:700;
+  letter-spacing:.16em; color:var(--g);
+}
+.live-tag::before {
+  content:''; display:block; width:5px; height:5px; border-radius:50%;
+  background:var(--g); box-shadow:0 0 7px var(--g);
+  animation:pulse 1.8s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:.35; transform:scale(.7); }
+}
+.edition {
+  font-family:var(--fn-m); font-size:.56rem; font-weight:400;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--lo);
+}
+button.vid-btn {
+  font-family:var(--fn-m); font-size:.58rem; font-weight:400;
+  letter-spacing:.12em; text-transform:uppercase;
+  color:var(--mid); background:rgba(0,196,167,.06);
+  border:1px solid rgba(0,196,167,.20);
+  padding:.40em 1.10em; border-radius:2px; cursor:none;
+  transition:background .22s, border-color .22s;
+}
+button.vid-btn:hover { background:rgba(0,196,167,.13); border-color:rgba(0,196,167,.45); }
+button.vid-btn:focus-visible { outline:2px solid var(--g); outline-offset:3px; }
+
+/* ── Content ── */
+.content {
+  position:absolute; left:5.5vw; bottom:9vh;
+  z-index:10; max-width:53vw;
+}
+.phase-tag {
+  display:flex; align-items:center; gap:.85rem;
+  font-family:var(--fn-m); font-size:.58rem; font-weight:400;
+  letter-spacing:.22em; text-transform:uppercase;
+  color:var(--g); margin-bottom:1.6rem;
+}
+.phase-tag::before {
+  content:''; display:block; width:26px; height:1px;
+  background:linear-gradient(90deg, var(--g), transparent);
+}
+
+/* Title — clipPath wipe */
+.tline-wrap { overflow:hidden; line-height:.88; }
+.tl-1 {
+  display:block; font-family:var(--fn-d);
+  font-size:clamp(5rem, 13.5vw, 18rem);
+  color:var(--hi); letter-spacing:.05em;
+  clip-path:inset(0 100% 0 0);
+}
+.tl-2 {
+  display:block; font-family:var(--fn-zh); font-weight:900;
+  font-size:clamp(2.6rem, 6.8vw, 9rem);
+  color:var(--g); letter-spacing:.12em;
+  clip-path:inset(0 100% 0 0);
+  padding-top:.06em;
+}
+.tl-3 {
+  display:block; font-family:var(--fn-d);
+  font-size:clamp(2.8rem, 7.5vw, 9.5rem);
+  color:var(--hi); letter-spacing:.05em;
+  clip-path:inset(0 100% 0 0);
+}
+
+.rule {
+  width:0; height:1px; margin:1.8rem 0 1.5rem;
+  background:linear-gradient(90deg, var(--g) 0%, rgba(0,196,167,0) 100%);
+}
+.tagline {
+  font-family:var(--fn-zh); font-size:clamp(.76rem,1.15vw,.92rem);
+  font-weight:300; color:var(--mid); letter-spacing:.07em;
+  line-height:1.70; margin-bottom:2.4rem;
+}
+
+.cta-wrap { display:flex; gap:1.2rem; align-items:center; }
+button.cta-main {
+  font-family:var(--fn-m); font-size:.65rem; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--void); background:var(--g);
+  border:none; padding:.86em 2.2em; border-radius:2px; cursor:none;
+  transition:background .22s, transform .15s;
+}
+button.cta-main:hover { background:#00DFC0; transform:translateY(-1px); }
+button.cta-main:focus-visible { outline:2px solid var(--g); outline-offset:3px; }
+button.cta-ghost {
+  font-family:var(--fn-m); font-size:.60rem; font-weight:400;
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--mid); background:none;
+  border:1px solid rgba(180,210,240,.18);
+  padding:.78em 1.8em; border-radius:2px; cursor:none;
+  transition:border-color .2s, color .2s;
+}
+button.cta-ghost:hover { border-color:rgba(180,210,240,.46); color:var(--hi); }
+button.cta-ghost:focus-visible { outline:2px solid var(--g); outline-offset:3px; }
+
+/* ── Cursor ── */
+.cur-dot {
+  position:fixed; width:4px; height:4px; border-radius:50%;
+  background:var(--g); pointer-events:none; z-index:9999;
+  transform:translate(-50%,-50%); mix-blend-mode:screen;
+}
+.cur-ring {
+  position:fixed; width:24px; height:24px; border-radius:50%;
+  border:1px solid rgba(0,196,167,.45); pointer-events:none; z-index:9998;
+  transform:translate(-50%,-50%);
+}
+
+/* ── RWD ── */
+@media (max-width:1024px) {
+  .kpi-wrap { right:1vw; }
+  #kpi-canvas { width:260px !important; height:260px !important; }
+  .kpi-legend, .edition { display:none; }
+}
+@media (max-width:760px) {
+  nav.topbar { padding:1.5rem 1.8rem; }
+  .content   { left:1.8rem; bottom:6vh; max-width:90vw; }
+  .kpi-wrap  { display:none; }
+  .cur-dot, .cur-ring { display:none; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .grain, .scanline { animation:none; }
+}
+</style>
+</head>
+<body>
+<div class="cur-dot" aria-hidden="true"></div>
+<div class="cur-ring" aria-hidden="true"></div>
+
+<main class="stage">
+  <div class="camera">
+    <video class="media" id="hero-vid"
+      src="https://i.urusai.cc/nPQ82.mp4"
+      autoplay muted loop playsinline
+      aria-label="背景影片 — 捷運專案場景">
+    </video>
+    <div class="overlay" aria-hidden="true"></div>
+  </div>
+
+  <div class="stars" aria-hidden="true"></div>
+  <div class="scanline" aria-hidden="true"></div>
+
+  <!-- KPI rings canvas -->
+  <div class="kpi-wrap" aria-hidden="true">
+    <canvas id="kpi-canvas" style="width:340px;height:340px;"></canvas>
+  </div>
+
+  <!-- Nav -->
+  <nav class="topbar" aria-label="頁面導覽">
+    <span class="brand">MRT Project Management Platform</span>
+    <div class="nav-r">
+      <div class="kpi-legend" aria-hidden="true">
+        <div class="kpi-pip" style="background:#00C4A7;" title="進度"></div>
+        <div class="kpi-pip" style="background:#4A9FE0;" title="品質"></div>
+        <div class="kpi-pip" style="background:#F5A623;" title="安全"></div>
+        <div class="kpi-pip" style="background:#C49A6C;" title="成本"></div>
+      </div>
+      <span class="edition">專案管理 · NV08</span>
+      <span class="live-tag">LIVE</span>
+      <button class="vid-btn" id="vid-btn" type="button"
+        aria-label="暫停影片" aria-pressed="true">Pause</button>
+    </div>
+  </nav>
+
+  <!-- Content -->
+  <section class="content" aria-labelledby="hero-title">
+    <div class="phase-tag" aria-hidden="true">捷運專案 · 即時管控</div>
+    <div class="title" id="hero-title" role="heading" aria-level="1"
+         aria-label="Project 進度管控 System">
+      <div class="tline-wrap"><span class="tl-1">PROJECT</span></div>
+      <div class="tline-wrap"><span class="tl-2">進度管控</span></div>
+      <div class="tline-wrap"><span class="tl-3">SYSTEM</span></div>
+    </div>
+    <div class="rule" aria-hidden="true"></div>
+    <p class="tagline">
+      整合工程進度、品質管控與風險預警，<br>
+      提供捷運專案管理層全面即時決策支援。
+    </p>
+    <div class="cta-wrap">
+      <button class="cta-main" type="button">專案進度總覽</button>
+      <button class="cta-ghost" type="button">工程資訊</button>
+    </div>
+  </section>
+
+  <div class="grain" aria-hidden="true"></div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var video        = document.getElementById('hero-vid');
+  var btn          = document.getElementById('vid-btn');
+  var pausedByUser = false;
+  var reduced      = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var finePtr      = window.matchMedia('(pointer: fine)').matches;
+  var anims        = [];
+
+  /* ── Custom cursor ── */
+  if (finePtr) {
+    var dot  = document.querySelector('.cur-dot');
+    var ring = document.querySelector('.cur-ring');
+    document.addEventListener('mousemove', function (e) {
+      gsap.set(dot,  { x: e.clientX, y: e.clientY });
+      gsap.to(ring,  { x: e.clientX, y: e.clientY, duration: .18, ease: 'power2.out' });
+    });
+  }
+
+  /* ── Video @ 2× speed ── */
+  function playVideo() {
+    if (!pausedByUser) {
+      video.play().catch(function () {});
+    }
+  }
+  video.muted       = true;
+  video.playbackRate = 2.0;
+  playVideo();
+  video.addEventListener('loadedmetadata', function () {
+    video.playbackRate = 2.0;
+    playVideo();
+  }, { once: true });
+
+  btn.addEventListener('click', function () {
+    if (video.paused) {
+      pausedByUser = false;
+      video.playbackRate = 2.0;
+      video.play().catch(function () {});
+      anims.forEach(function (a) { if (a.resume) a.resume(); });
+      btn.textContent = 'Pause';
+      btn.setAttribute('aria-label', '暫停影片');
+      btn.setAttribute('aria-pressed', 'true');
+    } else {
+      pausedByUser = true;
+      video.pause();
+      anims.forEach(function (a) { if (a.pause) a.pause(); });
+      btn.textContent = 'Play';
+      btn.setAttribute('aria-label', '播放影片');
+      btn.setAttribute('aria-pressed', 'false');
+    }
+  });
+
+  /* ── Stars (seeded LCG) ── */
+  function initStars(n) {
+    var seed = 5183;
+    function rng() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+    var sh = [];
+    for (var i = 0; i < n; i++) {
+      var x  = Math.floor(rng() * 1920);
+      var y  = Math.floor(rng() * 900);
+      var op = (rng() * 0.26 + 0.10).toFixed(2);
+      var sz = rng() > 0.80 ? '1px' : '0px';
+      sh.push(x + 'px ' + y + 'px 0 ' + sz + ' rgba(160,210,245,' + op + ')');
+    }
+    var el = document.querySelector('.stars');
+    if (el) el.style.boxShadow = sh.join(',');
+  }
+  initStars(75);
+
+  /* ── KPI Rings Canvas — Pure JS / Canvas 2D ── */
+  initKPI();
+
+  /* ── GSAP initial states ── */
+  gsap.set(['.tl-1', '.tl-2', '.tl-3'], { clipPath: 'inset(0 100% 0 0)' });
+  gsap.set('.phase-tag',  { opacity: 0, y: 10 });
+  gsap.set(['.brand', '.edition', '.live-tag', '.vid-btn', '.kpi-legend'], { opacity: 0 });
+  gsap.set('.tagline',    { opacity: 0, y: 10 });
+  gsap.set('.cta-wrap',   { opacity: 0 });
+  gsap.set('.kpi-wrap',   { opacity: 0 });
+
+  /* ── Reveal with race condition guard ── */
+  var _started = false;
+  function reveal() {
+    if (_started) return;
+    _started = true;
+    _doReveal();
+  }
+
+  function _doReveal() {
+    var tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+    tl
+      .to('.kpi-wrap',     { opacity: 1, duration: 1.8, ease: 'power2.out' }, 0)
+      .to('.brand',        { opacity: 1, duration: .50 }, 0.18)
+      .to('.kpi-legend',   { opacity: 1, duration: .45 }, 0.26)
+      .to('.edition',      { opacity: 1, duration: .45 }, 0.30)
+      .to('.live-tag',     { opacity: 1, duration: .45 }, 0.36)
+      .to('.vid-btn',      { opacity: 1, duration: .42 }, 0.42)
+      .to('.phase-tag',    { opacity: 1, y: 0, duration: .60 }, 0.50)
+      .to('.tl-1', { clipPath: 'inset(0 0% 0 0)', duration: 1.05, ease: 'expo.inOut' }, 0.60)
+      .to('.tl-2', { clipPath: 'inset(0 0% 0 0)', duration: 1.05, ease: 'expo.inOut' }, 0.78)
+      .to('.tl-3', { clipPath: 'inset(0 0% 0 0)', duration: 1.05, ease: 'expo.inOut' }, 0.96)
+      .to('.rule',      { width: 155, duration: .80, ease: 'power2.inOut' }, 1.08)
+      .to('.tagline',   { opacity: 1, y: 0, duration: .65 }, 1.22)
+      .to('.cta-wrap',  { opacity: 1, duration: .52 }, 1.40);
+    anims.push(tl);
+
+    if (!reduced) {
+      var cam = gsap.timeline({ repeat: -1, yoyo: true, delay: 2.0 });
+      cam
+        .fromTo('.camera',
+          { xPercent: -0.7, yPercent:  0.30 },
+          { xPercent:  0.7, yPercent: -0.38, duration: 10 })
+        .to('.camera', { xPercent: -0.35, yPercent: 0.20, duration: 9 });
+      anims.push(cam);
+    }
+  }
+
+  if (document.readyState === 'complete') {
+    reveal();
+  } else {
+    window.addEventListener('load', reveal, { once: true });
+    setTimeout(reveal, 1800);
+  }
+
+  /* ══════════════════════════════════════════════════
+     KPI RINGS CANVAS
+     4 concentric arcs: 進度 / 品質 / 安全 / 成本
+     Pure Canvas 2D — zero external deps
+     ══════════════════════════════════════════════════ */
+  function initKPI() {
+    var canvas = document.getElementById('kpi-canvas');
+    if (!canvas) return;
+    var ctx  = canvas.getContext('2d');
+    var SZ   = 340;
+    var dpr  = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width  = SZ * dpr;
+    canvas.height = SZ * dpr;
+    canvas.style.width  = SZ + 'px';
+    canvas.style.height = SZ + 'px';
+    ctx.scale(dpr, dpr);
+
+    var CX = SZ / 2, CY = SZ / 2;
+
+    /* KPI definitions */
+    var RINGS = [
+      { zh: '進度', en: 'PROGRESS', pct: 0.78, color: '#00C4A7', r: 148, sw: 7  },
+      { zh: '品質', en: 'QUALITY',  pct: 0.92, color: '#4A9FE0', r: 117, sw: 6  },
+      { zh: '安全', en: 'SAFETY',   pct: 0.95, color: '#F5A623', r: 88,  sw: 5  },
+      { zh: '成本', en: 'COST',     pct: 0.84, color: '#C49A6C', r: 60,  sw: 5  }
+    ];
+
+    var fillT  = 0;       /* 0 → 1 fill-in over 2.5s */
+    var lastTs = 0;
+    var START  = -Math.PI / 2;   /* 12 o'clock */
+
+    /* Easing: ease-out cubic */
+    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+    function render(now) {
+      var dt = now - lastTs; lastTs = now;
+      if (dt > 100) dt = 16;
+      ctx.clearRect(0, 0, SZ, SZ);
+
+      if (fillT < 1) fillT = Math.min(1, fillT + dt / 2400);
+      var easedT = easeOut(fillT);
+
+      /* ── Outer tick ring ── */
+      var tickCount = 60;
+      for (var i = 0; i < tickCount; i++) {
+        var ang = START + (i / tickCount) * Math.PI * 2;
+        var isMain = i % 5 === 0;
+        var r0 = CX - 5;
+        var r1 = r0 - (isMain ? 8 : 4);
+        ctx.save();
+        ctx.strokeStyle = isMain ? 'rgba(0,196,167,.40)' : 'rgba(0,196,167,.14)';
+        ctx.lineWidth   = isMain ? 1.5 : 0.8;
+        ctx.beginPath();
+        ctx.moveTo(CX + r0 * Math.cos(ang), CY + r0 * Math.sin(ang));
+        ctx.lineTo(CX + r1 * Math.cos(ang), CY + r1 * Math.sin(ang));
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      /* ── Each KPI ring ── */
+      RINGS.forEach(function (ring) {
+        var endAngle = START + Math.PI * 2 * ring.pct * easedT;
+
+        /* Track (dim full circle) */
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(CX, CY, ring.r, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+        ctx.lineWidth   = ring.sw;
+        ctx.stroke();
+        ctx.restore();
+
+        /* Fill arc */
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(CX, CY, ring.r, START, endAngle);
+        ctx.strokeStyle = ring.color;
+        ctx.lineWidth   = ring.sw;
+        ctx.lineCap     = 'round';
+        ctx.shadowColor = ring.color;
+        ctx.shadowBlur  = 10;
+        ctx.globalAlpha = 0.88;
+        ctx.stroke();
+        ctx.restore();
+
+        /* Tip dot */
+        if (easedT > 0.05) {
+          ctx.save();
+          var tx = CX + ring.r * Math.cos(endAngle);
+          var ty = CY + ring.r * Math.sin(endAngle);
+          var g  = ctx.createRadialGradient(tx, ty, 0, tx, ty, ring.sw * 1.8);
+          g.addColorStop(0, ring.color);
+          g.addColorStop(1, ring.color + '00');
+          ctx.fillStyle = g;
+          ctx.globalAlpha = Math.min(1, easedT * 1.5);
+          ctx.beginPath();
+          ctx.arc(tx, ty, ring.sw * 1.8, 0, Math.PI * 2);
+          ctx.fill();
+          /* bright core */
+          ctx.beginPath();
+          ctx.arc(tx, ty, ring.sw * 0.55, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.globalAlpha = 0.95;
+          ctx.fill();
+          ctx.restore();
+        }
+
+        /* Radial label at 12 o'clock (outside ring) */
+        if (easedT > 0.2) {
+          var labelR = ring.r + ring.sw + 12;
+          var lx = CX + labelR * Math.cos(START - 0.01);
+          var ly = CY + labelR * Math.sin(START - 0.01);
+          ctx.save();
+          ctx.fillStyle   = ring.color;
+          ctx.globalAlpha = Math.min(1, (easedT - 0.2) * 2);
+          ctx.font        = '700 8px "Space Mono", monospace';
+          ctx.textAlign   = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(ring.zh, lx, ly);
+          ctx.restore();
+        }
+
+        /* Percentage at 3 o'clock right edge */
+        if (easedT > 0.15) {
+          var pctNow = Math.round(ring.pct * 100 * easedT);
+          var pctAng = START + Math.PI * 0.5; /* 3 o'clock */
+          var px = CX + (ring.r + ring.sw * 0.5 + 14) * Math.cos(pctAng);
+          var py = CY + (ring.r + ring.sw * 0.5 + 14) * Math.sin(pctAng);
+          ctx.save();
+          ctx.fillStyle   = ring.color;
+          ctx.globalAlpha = Math.min(1, (easedT - 0.15) * 1.5);
+          ctx.font        = '700 9px "Space Mono", monospace';
+          ctx.textAlign   = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(pctNow + '%', px, py);
+          ctx.restore();
+        }
+      });
+
+      /* ── Center label ── */
+      if (easedT > 0.3) {
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, (easedT - 0.3) * 2);
+
+        /* Center glow */
+        var cg = ctx.createRadialGradient(CX, CY, 0, CX, CY, 36);
+        cg.addColorStop(0, 'rgba(0,196,167,0.12)');
+        cg.addColorStop(1, 'rgba(0,196,167,0)');
+        ctx.fillStyle = cg;
+        ctx.beginPath();
+        ctx.arc(CX, CY, 36, 0, Math.PI * 2);
+        ctx.fill();
+
+        /* KPI text */
+        ctx.fillStyle    = 'rgba(200,224,245,.85)';
+        ctx.font         = '700 11px "Space Mono", monospace';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('KPI', CX, CY - 8);
+
+        ctx.fillStyle = 'rgba(0,196,167,.90)';
+        ctx.font      = '400 9px "Space Mono", monospace';
+        ctx.fillText('STATUS', CX, CY + 7);
+        ctx.restore();
+      }
+
+      /* ── Corner frame ── */
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0,196,167,.38)';
+      ctx.lineWidth   = 1.5;
+      var C = 14;
+      function corner(ax, ay, bx2, by2, cx2, cy2) {
+        ctx.beginPath();
+        ctx.moveTo(ax, ay); ctx.lineTo(bx2, by2); ctx.lineTo(cx2, cy2);
+        ctx.stroke();
+      }
+      corner(0, C, 0, 0, C, 0);
+      corner(SZ-C, 0, SZ, 0, SZ, C);
+      corner(0, SZ-C, 0, SZ, C, SZ);
+      corner(SZ-C, SZ, SZ, SZ, SZ, SZ-C);
+      ctx.restore();
+
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+  }
+
+}());
+</script>
+</body>
+</html>
